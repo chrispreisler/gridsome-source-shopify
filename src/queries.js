@@ -100,7 +100,7 @@ export const COLLECTIONS_QUERY = `
           products(sortKey: COLLECTION_DEFAULT, first: 250) {
             edges {
               node {
-                title
+                id
               }
             }
           }
