@@ -53,7 +53,7 @@ export const ARTICLES_QUERY = `
       }
     }
   }
-`
+`;
 
 export const BLOGS_QUERY = `
   query GetBlogs($first: Int!, $after: String) {
@@ -75,7 +75,7 @@ export const BLOGS_QUERY = `
       }
     }
   }
-`
+`;
 
 export const COLLECTIONS_QUERY = `
   query GetCollections($first: Int!, $after: String) {
@@ -97,11 +97,18 @@ export const COLLECTIONS_QUERY = `
           }
           title
           updatedAt
+          products(sortKey: COLLECTION_DEFAULT, first: 250) {
+            edges {
+              node {
+                title
+              }
+            }
+          }
         }
       }
     }
   }
-`
+`;
 
 export const PRODUCTS_QUERY = `
   query GetProducts($first: Int!, $after: String) {
@@ -197,7 +204,7 @@ export const PRODUCTS_QUERY = `
       }
     }
   }
-`
+`;
 
 export const SHOP_POLICIES_QUERY = `
   query GetPolicies {
@@ -225,7 +232,7 @@ export const SHOP_POLICIES_QUERY = `
       }
     }
   }
-`
+`;
 
 export const PRODUCT_TYPES_QUERY = `
   query GetProductTypes($first: Int!) {
@@ -238,7 +245,7 @@ export const PRODUCT_TYPES_QUERY = `
       }
     }
   }
-`
+`;
 
 export const PAGES_QUERY = `
   query Pages ($first: Int!) {
@@ -258,4 +265,4 @@ export const PAGES_QUERY = `
       }
     }
   }
-`
+`;
