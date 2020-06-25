@@ -61,8 +61,8 @@ class ShopifySource {
 
       await this.setupStore(actions);
       await this.getProductTypes(actions);
-      await this.getProducts(actions);
       await this.getCollections(actions);
+      await this.getProducts(actions);
       await this.getBlogs(actions);
       await this.getArticles(actions);
       await this.getPages(actions);
@@ -91,35 +91,21 @@ class ShopifySource {
 
     const imageStore = actions.getCollection(this.TYPENAMES.IMAGE);
     const collectionStore = actions.addCollection({ typeName: this.TYPENAMES.COLLECTION });
-    const productStore = actions.getCollection(this.TYPENAMES.PRODUCT);
 
-    collectionStore.addReference("productList", this.TYPENAMES.PRODUCT);
+    collectionStore.addReference("products", this.TYPENAMES.PRODUCT);
 
     const allCollections = await queryAll(this.shopify, COLLECTIONS_QUERY, this.options.perPage);
 
     for (const collection of allCollections) {
       if (this.typesToInclude.includes(this.TYPENAMES.PRODUCT)) {
-        collection.productList = [];
-        collection.products.edges.map(({ node: product }) => {
-          const productNode = productStore.getNodeById(product.id);
-          if (productNode) collection.productList.push(product.id);
-          return actions.createReference(this.TYPENAMES.PRODUCT, product.id);
-        });
+        const productNodes = collection.products.edges.map(({ node: product }) => product.id);
+        collection.products = productNodes;
       }
-
-      console.log(collection.productList);
 
       if (collection.image) {
         const collectionImage = imageStore.addNode(collection.image);
         collection.image = actions.createReference(collectionImage);
       }
-
-      /*if (collection.handle === "schals-tucher") {
-        console.log(collection);
-        collection.products.edges.map((product) => {
-          console.log(product.node);
-        });
-      }*/
 
       collectionStore.addNode(collection);
     }
@@ -137,14 +123,14 @@ class ShopifySource {
     const allProducts = await queryAll(this.shopify, PRODUCTS_QUERY, this.options.perPage);
 
     for (const product of allProducts) {
-      /*if (this.typesToInclude.includes(this.TYPENAMES.COLLECTION)) {
+      if (this.typesToInclude.includes(this.TYPENAMES.COLLECTION)) {
         product.collections = product.collections.edges.map(({ node: collection }) => {
           const collectionNode = collectionStore.getNodeById(collection.id);
-          //if (collectionNode) collectionNode.products.push(product.id);
+          if (collectionNode) collectionNode.products.push(product.id);
 
           return actions.createReference(this.TYPENAMES.COLLECTION, collection.id);
         });
-      }*/
+      }
 
       const priceRange = this.getProductPriceRanges(product, actions);
 
