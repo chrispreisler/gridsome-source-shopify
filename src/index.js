@@ -94,11 +94,7 @@ class ShopifySource {
 
     collectionStore.addReference("products", this.TYPENAMES.PRODUCT);
 
-    const allCollections = await queryCollectionAll(
-      this.shopify,
-      COLLECTIONS_QUERY,
-      this.options.perPage
-    );
+    const allCollections = await queryAll(this.shopify, COLLECTIONS_QUERY, this.options.perPage);
 
     for (const collection of allCollections) {
       if (this.typesToInclude.includes(this.TYPENAMES.PRODUCT)) {

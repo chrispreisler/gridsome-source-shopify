@@ -27,8 +27,15 @@ export const printGraphQLError = (e) => {
 /**
  * Request a query from a client.
  */
-export const queryOnce = async (client, query, first = 100, after) =>
-  client.request(query, { first, after });
+
+export const queryOnce = async (
+  client,
+  query,
+  first = 100,
+  after,
+  firstProduct = 100,
+  afterProduct
+) => client.request(query, { first, after, firstProduct, afterProduct });
 
 /**
  * Get all paginated data from a query. Will execute multiple requests as
@@ -39,7 +46,8 @@ export const queryAll = async (client, query, first, after, aggregatedResponse) 
     data: { edges, pageInfo },
   } = await queryOnce(client, query, first, after);
   const lastNode = edges[edges.length - 1];
-  const nodes = edges.map((edge) => edge.node);
+
+  const nodes = await getNodes(client, query, edges);
 
   aggregatedResponse
     ? (aggregatedResponse = aggregatedResponse.concat(nodes))
@@ -52,42 +60,23 @@ export const queryAll = async (client, query, first, after, aggregatedResponse) 
   return aggregatedResponse;
 };
 
-export const queryCollectionAll = async (client, query, first, after, aggregatedResponse) => {
-  const {
-    data: { edges, pageInfo },
-  } = await queryCollectionOnce(client, query, first, after);
-  const lastNode = edges[edges.length - 1];
+const getNodes = (client, query, edges) => {
+  // Map through all Nodes
+  const promises = edges.map(async (edge, index) => {
+    // Check if there are more than 100 products
+    if (!edge.node.products) return edge.node;
+    if (!edge.node.products.pageInfo.hasNextPage) return edge.node;
 
-  const nodes = await Promise.all(
-    edges.map(async (edge, index) => {
-      if (!edge.node.products.pageInfo.hasNextPage) return edge.node;
-      edge.node.products.edges =
-        index === 0
-          ? await queryCollectionProducts(client, query, 1)
-          : await queryCollectionProducts(client, query, 1, edges[index - 1].cursor);
-      return edge.node;
-    })
-  );
+    // Define First and After of collection with more than 100 products
+    const first = 1;
+    const after = edges[index - 1] ? edges[index - 1].cursor : undefined;
 
-  aggregatedResponse
-    ? (aggregatedResponse = aggregatedResponse.concat(nodes))
-    : (aggregatedResponse = nodes);
-
-  if (pageInfo.hasNextPage) {
-    return queryCollectionAll(client, query, first, lastNode.cursor, aggregatedResponse);
-  }
-
-  return aggregatedResponse;
+    // Query for products
+    edge.node.products.edges = await queryCollectionProducts(client, query, first, after);
+    return edge.node;
+  });
+  return Promise.all(promises);
 };
-
-export const queryCollectionOnce = async (
-  client,
-  query,
-  first = 100,
-  after,
-  firstProduct = 100,
-  afterProduct
-) => client.request(query, { first, after, firstProduct, afterProduct });
 
 export const queryCollectionProducts = async (
   client,
@@ -100,7 +89,7 @@ export const queryCollectionProducts = async (
 ) => {
   const {
     data: { edges, pageInfo },
-  } = await queryCollectionOnce(client, query, first, after, firstProduct, afterProduct);
+  } = await queryOnce(client, query, first, after, firstProduct, afterProduct);
   const products = edges[0].node.products;
   const lastProductNode = products.edges[products.edges.length - 1];
   const nodes = products.edges.map((edge) => edge);
