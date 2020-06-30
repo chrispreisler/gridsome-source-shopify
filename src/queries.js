@@ -78,7 +78,7 @@ export const BLOGS_QUERY = `
 `;
 
 export const COLLECTIONS_QUERY = `
-  query GetCollections($first: Int!, $after: String) {
+  query GetCollections($first: Int!, $firstProduct: Int!, $after: String, $afterProduct: String) {
     data: collections (first: $first, after: $after) {
       pageInfo {
         hasNextPage
@@ -97,8 +97,12 @@ export const COLLECTIONS_QUERY = `
           }
           title
           updatedAt
-          products(sortKey: COLLECTION_DEFAULT, first: 250) {
+          products(sortKey: COLLECTION_DEFAULT, first: $firstProduct, after: $afterProduct) {
+            pageInfo {
+              hasNextPage
+            }
             edges {
+              cursor
               node {
                 id
               }

@@ -1,6 +1,6 @@
 import camelCase from "camelcase";
 import { nanoid } from "nanoid";
-import { createClient, queryAll } from "./client";
+import { createClient, queryAll, queryCollectionAll } from "./client";
 import { createSchema } from "./schema";
 import {
   COLLECTIONS_QUERY,
@@ -94,7 +94,11 @@ class ShopifySource {
 
     collectionStore.addReference("products", this.TYPENAMES.PRODUCT);
 
-    const allCollections = await queryAll(this.shopify, COLLECTIONS_QUERY, this.options.perPage);
+    const allCollections = await queryCollectionAll(
+      this.shopify,
+      COLLECTIONS_QUERY,
+      this.options.perPage
+    );
 
     for (const collection of allCollections) {
       if (this.typesToInclude.includes(this.TYPENAMES.PRODUCT)) {
@@ -118,16 +122,12 @@ class ShopifySource {
     const productVariantStore = actions.addCollection({ typeName: this.TYPENAMES.PRODUCT_VARIANT });
     const imageStore = actions.getCollection(this.TYPENAMES.IMAGE);
     const priceStore = actions.getCollection(this.TYPENAMES.PRICE);
-    const collectionStore = actions.getCollection(this.TYPENAMES.COLLECTION);
 
     const allProducts = await queryAll(this.shopify, PRODUCTS_QUERY, this.options.perPage);
 
     for (const product of allProducts) {
       if (this.typesToInclude.includes(this.TYPENAMES.COLLECTION)) {
         product.collections = product.collections.edges.map(({ node: collection }) => {
-          const collectionNode = collectionStore.getNodeById(collection.id);
-          if (collectionNode) collectionNode.products.push(product.id);
-
           return actions.createReference(this.TYPENAMES.COLLECTION, collection.id);
         });
       }
